@@ -85,6 +85,88 @@ void print_map(){
     return;
 }
 
+static int getattr( const char *path, struct stat *st )
+{
+	printf( "[getattr] Called\n" );
+	printf( "\tAttributes of %s requested\n", path );
+    st->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
+	st->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
+	st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
+	st->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
+	
+	if ( strcmp( path, "/" ) == 0 )
+	{
+		st->st_mode = S_IFDIR | 0755;
+		st->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
+	}
+	else
+	{
+		st->st_mode = S_IFREG | 0644;
+		st->st_nlink = 1;
+		st->st_size = 1024;
+	}
+	
+	return 0;
+}
+
+static int l_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+			 off_t offset, struct fuse_file_info *fi,
+			 enum fuse_readdir_flags flags)
+{
+    (void) offset;
+    (void) fi;
+    (void) flags;
+    int i,n_c;
+    static node *n ,*n_par;
+    char *file = getFileName(path);
+    
+    if(map_node.find(file)==map_node.end())
+        return -1;
+    else
+        n = map_node[file];
+
+    filler(buf, ".", NULL, 0, 0);
+    filler(buf, "..", NULL, 0, 0);
+    
+    return 0;
+}
+
+
+static int l_unlink(const char *path){
+    char *file = getFileName(path);
+    int i,n_c;
+    static node *n ,*n_par;
+    if(map_node.find(file)==map_node.end())
+        return -1;
+    else
+        n = map_node[file];  
+    n_par = n->parent;
+    n_c = n_par->num_child;
+    
+    for(i=0;i<n_c;i++){
+        if(n1==n_par->child[i]){
+            n_par->child[i]=n_par->chile[i+1];
+        }
+    }
+    free(n1);
+    n_par->num_child--;
+    return 1;
+}
+
+static int l_rmdir(const char *path){
+    char *file = getFileName(path);
+    static node *n1;
+    if(map_node.find(file)==map_node.end())
+        return -1;
+    else
+        n = map_node[file];
+     
+    if(n1->num_child==0)
+        return -1;
+
+    return l_unlink(path);    
+}
+
 static int l_mknod(const char *path, mode_t mode, dev_t rdev){
     
     if(root->size<1024)
