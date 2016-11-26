@@ -29,6 +29,8 @@ struct node{
 }
 
 struct node *root;
+char *root_path;
+int root_size;
 std::map<char *file_name, struct node* file_node> map_node;
 
 //for /etc/abc/cde , this function returns "cde"
@@ -85,16 +87,39 @@ void print_map(){
     return;
 }
 
+static int l_read( const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *fi ){
+    char *file = getFileName(path);
+    struct node *n;
+    if(map_node.find(file)==map_node.end())
+        return -1;
+    else
+        n = map_node[file];
+    if(size > n->size)
+        size = n->size;
+    if (size+offset > n->size)
+        size = n->size-offset;
+    char *buf = n->buffer;
+    memcpy( buffer, buf + offset, size );  
+    return size;      
+}
+
 static int getattr( const char *path, struct stat *st )
 {
 	printf( "[getattr] Called\n" );
 	printf( "\tAttributes of %s requested\n", path );
+    char *file = getFileName(path);
+    struct node* n;
+    if(map_node.find(file)==map_node.end())
+        return -1;
+    else
+        n = map_node[file];
+
     st->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
 	st->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
 	st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
 	st->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
 	
-	if ( strcmp( path, "/" ) == 0 )
+	if (n->type =='d')
 	{
 		st->st_mode = S_IFDIR | 0755;
 		st->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
@@ -117,20 +142,26 @@ static int l_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     (void) fi;
     (void) flags;
     int i,n_c;
-    static node *n ,*n_par;
+    static node *n ,*n_par,*n_child;
+    struct stat *st;
     char *file = getFileName(path);
     
     if(map_node.find(file)==map_node.end())
         return -1;
     else
         n = map_node[file];
-
+    
     filler(buf, ".", NULL, 0, 0);
     filler(buf, "..", NULL, 0, 0);
+    for(int i=0;i<n->num_child;i++){
+        n_child = n->child[i];
+        memset(st, 0, sizeof(struct stat));
+        getattr(n_child,st);
+        filler(buf,n_child->file_name,st,0);
+    }
     
     return 0;
 }
-
 
 static int l_unlink(const char *path){
     char *file = getFileName(path);
@@ -236,8 +267,8 @@ static struct fuse_operations my_rmdk = {
 
 int main(int argc, char *argv[])
 {
-    char *root_path = argv[1];
-    int root_size = atoi(argv[2]);
+    root_path = argv[1];
+    root_size = atoi(argv[2])*1024*1024; //MB to B conversion
     make_root_node(root_path,root_size*1024*1024);
     return fuse_main(args.argc, args.argv, &hello_oper, NULL);
 }
