@@ -126,7 +126,7 @@ static int my_write(const char *path, const char *buf, size_t size,
                  
 }
 */
-void getattr( const char *path, struct stat *st)
+int getattr( const char *path, struct stat *st)
 {
 	printf("*** getattr() map_node size is %d path is %s***\n\n",map_node.size(), path);
 	printf( "\tAttributes of %s requested\n\n", path );
@@ -136,8 +136,8 @@ void getattr( const char *path, struct stat *st)
     memset(st, 0, sizeof(struct stat));
     //if(map_node.find(path)==map_node.end()){
      if(n==NULL){
-        printf("*** node not found ***\n");
-        return;
+        printf("*** node not found ..return from getatt()***\n");
+        return 0;
     }
 	st-> st_uid = fc->uid;
 	st-> st_gid = fc->gid;
@@ -159,13 +159,13 @@ void getattr( const char *path, struct stat *st)
 		st->st_size = 1024;
 	}
 	printf("*** return from getattr()***\n");
-    return;
+    return 1;
 }
 
 static int l_getattr(const char *path, struct stat *stbuf){
     printf("*** l_getattr() with path as %s***\n\n",path);
     char *file = getFileName(path);
-    
+    int k=1;    
     memset(stbuf, 0, sizeof(struct stat));
  /*   if(cnt==0){
     stbuf->st_mode = S_IFDIR | 0755;
@@ -178,7 +178,10 @@ static int l_getattr(const char *path, struct stat *stbuf){
 		stbuf->st_nlink = 2;
 	}
     else
-    getattr(file,stbuf);
+         k = getattr(file,stbuf);
+    printf("return value from getattr() : %d\n",k);
+    if(!k)
+	return -ENOENT;
     printf("*** return from l_getattr()***\n");    
     return 0;
 }
@@ -202,54 +205,25 @@ static int l_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     //if(map_node.find(path)==map_node.end() && k==0){
     if(n==NULL){ 
        printf("node not found\n");
-        return ENOENT;
+        return -ENOENT;
     }    
     else{
         //n = map_node[path];
       printf("node found in l_readdir()\n\n");
      }
-    //filler(buf, "file54", NULL, 0, (fuse_fill_dir_flags)0 );
-    //filler(buf, "file349", NULL, 0, (fuse_fill_dir_flags)0 );
+
     printf("num child : %d\n",n->num_child);
    for(i=0;i<n->num_child;i++){
        printf("child : %s\n",n->child[i]->file_name);
         n_child = n->child[i];
         memset(st, 0, sizeof(struct stat));
-        getattr(n_child->file_name,st);
-        filler(buf, n_child->file_name, st, 0);
+        if(getattr(n_child->file_name,st));
+            filler(buf, n_child->file_name, st, 0);
     }
     printf("return from l_readdir()\n"); 
     return 0;
 }
-/*
 
-static int my_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-
-			 off_t offset, struct fuse_file_info *fi)
-
-{
-
-	
-
-	(void) offset;
-
-	(void) fi;	
-
-	
-
-	printf("Inside readdir path=%s \n",path);	
-
-	filler(buf, ".", NULL, 0);
-
-	filler(buf, "..", NULL, 0);
-	struct stat stbuf;
-	printf("Exiting readdir \n");
-
-	return 0;
-
-}
-
-*/
 static int l_unlink(const char *path){
     printf("*** l_unlink() with path as %s***\n\n",path);
     //char *file = getFileName(path);
@@ -318,8 +292,14 @@ static int l_mkdir(const char *path, mode_t mode){
         return -1;
         
     struct node *n1 = (struct node*)malloc(sizeof(struct node));
+    if(n1==NULL)
+	printf("node of path %s is NULL\n",path);
+    printf("node of path %s is not NULL\n",path);
     char *dir = getFileName(path); //gets directory name from path
     struct node* n1_par = getParNode(path);
+    if(n1_par==NULL)
+	printf("parent of node is NULL\n");
+    printf("parent of path %s is not NULL\n",path);
     n1->file_name = dir; //may have to use strcpy()
     n1->file_type = 'd';
     n1->num_child = 0;
@@ -329,7 +309,7 @@ static int l_mkdir(const char *path, mode_t mode){
     map_node[path] = n1;
     n1_par->child[n1_par->num_child++] = n1;
     root_size -= 128;
-    
+    printf("return from mkdir()\n");
     return 0;
 }
 
