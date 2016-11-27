@@ -171,10 +171,14 @@ static int l_getattr(const char *path, struct stat *stbuf){
     stbuf->st_mode = S_IFDIR | 0755;
 	stbuf->st_nlink = 2;
     stbuf-> st_atime = stbuf-> st_ctime = stbuf-> st_mtime = time(NULL);
-    cnt++;
-    }
+    //cnt++;
+    //}
+*/	if (strcmp(path, "/") == 0) {
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+	}
     else
- */   getattr(file,stbuf);
+    getattr(file,stbuf);
     printf("*** return from l_getattr()***\n");    
     return 0;
 }
@@ -339,6 +343,7 @@ void make_root_node(char *root_path, int rt_size){
     root->size = rt_size;
     root->buffer = NULL; 
     map_node[root->file_name] = root;
+    map_node[root_path] = root;
     return;   
 }
 
