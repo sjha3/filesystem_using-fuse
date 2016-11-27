@@ -91,13 +91,17 @@ struct node* getParNode(const char *path){
     return n;
 }
 
-void print_map(){
-    printf("*** inside print_map() ***\n\n");
+struct node* print_map(const char *path){
+    printf("*** inside print_map() with path as %s***\n\n",path);
     std::map<const char*, struct node*>::iterator it;
     for(it=map_node.begin();it!=map_node.end();it++){
         printf("%s => %d \n",it->first,it->second);
+	if(strcmp(path,it->first)==0){
+		printf("node found  inside map yyyyyyyyyyyaaaaaaaaaaaaaaaaaaahooooooooooooooooooooooo\n");
+		return it->second;
+	}
     }
-    return;
+    return NULL;
 }
 
 static int l_read( const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *fi ){
@@ -126,18 +130,15 @@ void getattr( const char *path, struct stat *st)
 {
 	printf("*** getattr() map_node size is %d path is %s***\n\n",map_node.size(), path);
 	printf( "\tAttributes of %s requested\n\n", path );
-    print_map();
+    struct node* n  = print_map(path);
     struct fuse_context* fc = fuse_get_context();
     char *file = getFileName(path);
     memset(st, 0, sizeof(struct stat));
-    struct node* n;
-    if(map_node.find(path)==map_node.end()){
+    //if(map_node.find(path)==map_node.end()){
+     if(n==NULL){
         printf("*** node not found ***\n");
-        return ;
+        return;
     }
-    else
-        n = map_node[path];
-    printf("found node in map_node\n");
 	st-> st_uid = fc->uid;
 	st-> st_gid = fc->gid;
 	st-> st_blksize = 512;
@@ -193,15 +194,16 @@ static int l_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, ".", NULL, 0);//FUSE_FILL_DIR_PLUS);
     printf("before ..\n");
     filler(buf, "..", NULL, 0);
-
-    if(map_node.find(path)==map_node.end()){
-        printf("node not found\n");
+    n = print_map(path);
+    //if(map_node.find(path)==map_node.end() && k==0){
+    if(n==NULL){ 
+       printf("node not found\n");
         return ENOENT;
     }    
-    else
-        n = map_node[path];
-        
-    printf("node found in l_readdir()\n\n");
+    else{
+        //n = map_node[path];
+      printf("node found in l_readdir()\n\n");
+     }
     //filler(buf, "file54", NULL, 0, (fuse_fill_dir_flags)0 );
     //filler(buf, "file349", NULL, 0, (fuse_fill_dir_flags)0 );
     printf("num child : %d\n",n->num_child);
