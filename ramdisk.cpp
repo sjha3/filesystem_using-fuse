@@ -261,26 +261,57 @@ static int l_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     return 0;
 }
 
+void freeNode(struct node* n){
+    n->file_name = NULL;
+    n->buffer = NULL;
+    n->parent = NULL;
+    n->size = n->num_child = 0;
+    free(n);
+    return;
+}
+
 static int l_unlink(const char *path){
     printf("*** l_unlink() with path as %s***\n\n",path);
     //char *file = getFileName(path);
     int i,n_c;
     static node *n ,*n_par;
+   /*
     if(map_node.find(path)==map_node.end())
         return ENOENT;
     else
         n = map_node[path];  
-    n_par = n->parent;
+    */
+    n = find_node(path);
+    if(n==NULL)
+	return -ENOENT;
+    //n_par = n->parent;
+    n_par = getParNode(path);
     n_c = n_par->num_child;
-    
+
+   printf("original child of parent node\n");
+   for(i=0;i<n_par->num_child;i++){
+   printf("child is %s \n",n_par->child[i]->file_name);
+  }
+   
     for(i=0;i<n_c;i++){
         if(n==n_par->child[i]){
-            n_par->child[i]=n_par->child[i+1];
+            printf("**********************child with path as %s and node pointer as %d which is same as n_par->child[i] found at i : %d and num_child : %d\n",path,n,n_par->child[i],i,n_c);
+            freeNode(n);
+            if(i == n_par->num_child-1)
+		break;
+            n_par->child[i]=n_par->child[++i];
         }
     }
-    free(n);
+    //free(n);
     n_par->num_child--;
-    return 1;
+    printf("***********reduced num of child is %d\n",n_par->num_child);
+
+   printf("remaining child of parent node\n");
+   for(i=0;i<n_par->num_child;i++){
+   printf("child is %s \n",n_par->child[i]->file_name);
+  }
+
+    return 0;
 }
 
 static int l_opendir(const char *path, struct fuse_file_info *fi){
@@ -290,15 +321,16 @@ static int l_opendir(const char *path, struct fuse_file_info *fi){
 static int l_rmdir(const char *path){
     printf("*** l_rmdir() with path as %s***\n\n",path);
     //char *file = getFileName(path);
-    static node *n;
-    if(map_node.find(path)==map_node.end())
-        return ENOENT;
-    else
-        n = map_node[path];
-     
-    if(n->num_child==0)
-        return -1;
-
+    static node *n = find_node(path);
+    //if(map_node1.find(path)==map_node.end())
+    if(n==NULL)  
+        return -ENOENT;
+    cout<<"node is "<<n<<" num child : "<<n->num_child<<endl; 
+    if(n->num_child != 0){
+	printf("num_child !=0...so don't delete directory \n");
+        return -ENOTEMPTY;
+    }
+    printf("num_child ==0..go to unlink \n");
     return l_unlink(path);    
 }
 
