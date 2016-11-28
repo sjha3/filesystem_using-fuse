@@ -36,6 +36,15 @@ static int cnt = 0;
 std::map<const char*, struct node* > map_node;
 std::map<std::string , struct node* > map_node1;
 
+void print_child(struct node *n){
+   int i;
+   printf("print child() for file: %s\n",n->file_name);
+   for(i=0;i<n->num_child;i++){
+   cout<<"file : "<<n->child[i]->file_name<<endl;
+  }
+return; 
+}
+
 //for /etc/abc/cde , this function returns "cde"
 char *getFileName(const char* path){
     printf("inside getFileName() with path as %s\n\n",path);
@@ -100,7 +109,7 @@ struct node* find_node(std::string ss){
     std::map<std::string, struct node*>::iterator it;
     for(it=map_node1.begin();it!=map_node1.end();it++){
         //printf("%s => %d \n",it->first,it->second);
-	cout<< it->first << " = >" <<it->second<<endl;
+	//cout<< it->first << " = >" <<it->second<<endl;
 	//if(strcmp(path,it->first)==0){
         if(ss == it->first){
 		printf("node found  inside map yyyyyyyyyyyaaaaaaaaaaaaaaaaaaahooooooooooooooooooooooo\n");
@@ -292,25 +301,35 @@ static int l_unlink(const char *path){
    for(i=0;i<n_par->num_child;i++){
    printf("child is %s \n",n_par->child[i]->file_name);
   }
-   
-    for(i=0;i<n_c;i++){
+  int kk = 0; 
+    for(i=0;i<n_par->num_child;i++){
         if(n==n_par->child[i]){
-            printf("**********************child with path as %s and node pointer as %d which is same as n_par->child[i] found at i : %d and num_child : %d\n",path,n,n_par->child[i],i,n_c);
+            printf("**********************child with path as %s and node pointer as %d which is same as n_par->child[i] found at i : %d and num_child : %d match at i : %d\n",path,n,n_par->child[i],n_par->num_child,i);
             freeNode(n);
-            if(i == n_par->num_child-1)
-		break;
-            n_par->child[i]=n_par->child[++i];
-        }
+            kk = 1;
+    n_par->num_child--;
+           // if(i == n_par->num_child-1)
+	   //	break;
+       }
+       if(i == n_par->num_child)
+         break;
+       printf("*********child is %s \n",n_par->child[i]->file_name);
+      if(kk){      
+      n_par->child[i]=n_par->child[i+1];
+      cout <<" now file at "<< i+1 <<" is copied at "<< i<<endl;
+       } 
     }
     //free(n);
-    n_par->num_child--;
+    //n_par->num_child--;
     printf("***********reduced num of child is %d\n",n_par->num_child);
 
    printf("remaining child of parent node\n");
    for(i=0;i<n_par->num_child;i++){
    printf("child is %s \n",n_par->child[i]->file_name);
   }
-
+   print_child(n_par);
+   printf("erase entry from map_node1\n");
+   map_node1.erase(path);
     return 0;
 }
 
@@ -355,7 +374,7 @@ static int l_mknod(const char *path, mode_t mode, dev_t rdev){
     map_node[path] = n1;  //mapping of complete path name to it's node;
     n1_par->child[n1_par->num_child++] = n1;
     root_size -= 1024;
-    
+    print_child(n1_par); 
     return 0;    
 }
 
@@ -395,6 +414,7 @@ static int l_mkdir(const char *path, mode_t mode){
     root_size -= 128;
     printf("return from mkdir() after creating node for file %s\n",n1->file_name);
     printf("return from mkdir() after creating child node %d for node %d\n",n1_par->child[n1_par->num_child-1],n1_par);
+    print_child(n1_par);
     return 0;
 }
 
