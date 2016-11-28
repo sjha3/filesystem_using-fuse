@@ -174,17 +174,20 @@ static int l_write(const char *path, const char *buf, size_t size,
 static int l_read( const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *fi ){
     printf("*** l_read() with path as %s***\n\n",path);
     //char *file = getFileName(path);
-    struct node *n;
-    if(map_node.find(path)==map_node.end())
-        return ENOENT;
-    else
-        n = map_node[path];
+    struct node *n = find_node(path);
+    printf("******node is not null and has file as %s and size: %d\n",n->file_name,n->size);
+    if(n==NULL)
+        return -ENOENT;
     if(size > n->size)
         size = n->size;
     if (size+offset > n->size)
         size = n->size-offset;
+    printf("size is %d\n",size);
     char *buf = n->buffer;
-    memcpy( buffer, buf + offset, size );  
+    memcpy( buffer, buf + offset, size );
+    buffer[n->size+offset+size]='\0'; 
+    printf("************ read buf is %s**********\n",buffer);
+    printf("**********return from l_read()************\n"); 
     return size;      
 }
 /*
