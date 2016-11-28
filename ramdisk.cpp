@@ -311,7 +311,9 @@ static int l_mknod(const char *path, mode_t mode, dev_t rdev){
     struct node *n1 = (struct node*)malloc(sizeof(struct node));
     char *file = getFileName(path); //gets filename from path
     struct node* n1_par = getParNode(path);
-    n1->file_name = file;
+    char *path1=(char*)malloc(1024);
+    strcpy(path1,path);
+    n1->file_name = path1;//file;
     n1->file_type = 'f';
     n1->num_child = 0;
     n1->parent = n1_par;
@@ -343,7 +345,9 @@ static int l_mkdir(const char *path, mode_t mode){
     if(n1_par==NULL)
 	printf("parent of node is NULL\n");
     printf("parent of path %s is %s\n",path,n1_par->file_name);
-    n1->file_name = dir; //may have to use strcpy()
+    char *path1=(char*)malloc(1024);
+    strcpy(path1,path);
+    n1->file_name = path1;//dir; //may have to use strcpy()
     n1->file_type = 'd';
     n1->num_child = 0;
     n1->parent = n1_par;
