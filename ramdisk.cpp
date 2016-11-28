@@ -138,7 +138,36 @@ void print_map(){
     return ;
 }
 
+static int l_write(const char *path, const char *buf, size_t size,
+		     off_t offset, struct fuse_file_info *fi)
+{
+    std::string ss(path);
+    int i=0, j =offset;
+    printf("******** l_write() with size %d and offset %d\n",size,offset);
+    struct node* n  = find_node(ss);
+    if(n == NULL)
+	return -ENOENT;
 
+    if(n->size < offset+size)
+	n->size += offset + size; 
+   printf("******new n->size = %d\n",n->size);
+
+    char *content =(char*) malloc(n->size);
+    memcpy(content,n->buffer,offset);
+ 
+    while(i<size){
+        content[j] = buf[i];
+        if(buf[i]=='\0')
+          break;
+        i++;
+    }
+
+   printf("////////////  content in file : %s and length : %d********** \n", content,i);
+   n->buffer = content;
+   printf("*** return from l_write() *************\n");
+   return i; 
+    
+}
 static int l_read( const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *fi ){
     printf("*** l_read() with path as %s***\n\n",path);
     //char *file = getFileName(path);
@@ -463,6 +492,7 @@ int main(int argc, char *argv[])
     l_rmdk.mknod = l_mknod;
     l_rmdk.getattr = l_getattr;
     l_rmdk.opendir = l_opendir;
+    l_rmdk.write = l_write;
     //strcpy(root_path ,"/");
     printf( "file is %s size %d  argc : %d\n", root_path, root_size, argc);//, map_node[root_path]->file_name,argc);
     printf("print root:\n");
