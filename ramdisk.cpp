@@ -89,7 +89,7 @@ struct node* getParNode(const char *path){
 	printf("***********root is parent\n");
         return root;
         }
-    struct node* n = map_node[fpath];
+    struct node* n = map_node1[fpath];
     return n;
 }
 
@@ -224,7 +224,7 @@ static int l_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     (void) fi;
     int i;
     struct node *n ,*n_child;
-    struct stat *st;
+    struct stat *st = (struct stat*) malloc(sizeof(struct stat));
     //char *file = getFileName(path);
 
     printf("before .\n");
@@ -249,14 +249,13 @@ static int l_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     printf("num child : %d\n",n->num_child);
    for(i=0;i<n->num_child;i++){
        printf("child : %s\n",n->child[i]->file_name);
-        n_child = n->child[i];
         printf("checkkkkkkkkkkkkkkkkkkkkkkkkkkk\n");
-        if(n_child==NULL){
-		printf("child is NULL\n");
-	  }
         memset(st, 0, sizeof(struct stat));
-        if(getattr(n->child[i]->file_name,st));
-            filler(buf, n_child->file_name, st, 0);
+        printf("checkkkkkkkkkkkkkkkkkkkkkkkkkkk\n");
+        //if(getattr(n->child[i]->file_name,st));
+        int k = getattr(n->child[i]->file_name,st);
+        printf("came bacl from getattr(), now need to fill buffer \n\n");
+        filler(buf, n->child[i]->file_name, st, 0);
     }
     printf("return from l_readdir()\n"); 
     return 0;
