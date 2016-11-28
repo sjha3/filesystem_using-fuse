@@ -143,7 +143,7 @@ static int l_write(const char *path, const char *buf, size_t size,
 {
     std::string ss(path);
     int i=0, j =offset;
-    printf("******** l_write() with size %d and offset %d\n",size,offset);
+    printf("******** l_write() with size %d and offset %d and content as %s\n",size,offset,buf);
     struct node* n  = find_node(ss);
     if(n == NULL)
 	return -ENOENT;
@@ -153,13 +153,16 @@ static int l_write(const char *path, const char *buf, size_t size,
    printf("******new n->size = %d\n",n->size);
 
     char *content =(char*) malloc(n->size);
+    if(offset>0)
     memcpy(content,n->buffer,offset);
  
     while(i<size){
+       //printf("buf %d : %c and j : %d\n",i,buf[i],j);
         content[j] = buf[i];
         if(buf[i]=='\0')
           break;
         i++;
+        j++;
     }
 
    printf("////////////  content in file : %s and length : %d********** \n", content,i);
