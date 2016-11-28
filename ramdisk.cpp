@@ -64,7 +64,6 @@ char *getFileName(const char* path){
     
    return file;        
 }
-//for /etc/abc/cde , this function returns "abc", which is parent directory of cde.
 //changed to /etc/abc/cde => /abc/cde
 char *getDirName(const char *path){
     printf("inside getDirName() with path as %s\n\n",path);
@@ -74,18 +73,6 @@ char *getDirName(const char *path){
     printf("dirname of %s = %s\n", path, dname);
     //return getFileName(dname);
     return dname;
-    /*
-    const char s[2] = "/";
-    char* token = strtok(dname, s);
-    char* last_dir = malloc(256);
-    
-    while( token != NULL ){ 
-       strcpy(last_dir,token);
-       token = strtok(NULL, s);
-    }  
-    printf("last directory is %s\n",last_dir);
-    return last_dir;
-   */
 }
 
 struct node* getParNode(const char *path){
