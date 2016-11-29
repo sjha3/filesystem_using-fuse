@@ -154,7 +154,7 @@ static int l_write(const char *path, const char *buf, size_t size,
 
    printf("////////////  content in file : %s and length : %d********** \n", content,i);
    n->buffer = content;
-   printf("*** return from l_write() *************\n");
+   printf("*** return from l_write()after writing %s in node *************\n",n->buffer);
    return i; 
     
 }
@@ -167,8 +167,10 @@ static int l_read( const char *path, char *buffer, size_t size, off_t offset, st
         return -ENOENT;
     if(size > n->size)
         size = n->size;
+    if(offset > strlen(n->buffer))
+	return -1;
     if (size+offset > n->size)
-        size = n->size-offset;
+        size = strlen(n->buffer)-offset;
     printf("size is %d\n",size);
     char *buf = n->buffer;
     memcpy( buffer, buf + offset, size );
