@@ -389,13 +389,13 @@ static int l_mknod(const char *path, mode_t mode, dev_t rdev){
     n1->file_type = 'f';
     n1->num_child = 0;
     n1->parent = n1_par;
-    n1->size = 1024;//put a check here to see if 1024 is still available with root
+    n1->size = 256;//put a check here to see if 1024 is still available with root
     n1->buffer = NULL;
     std::string ss(path);
     map_node1[path] = n1;
     map_node[path] = n1;  //mapping of complete path name to it's node;
     n1_par->child[n1_par->num_child++] = n1;
-    root_size -= 1024;
+    root_size -= 256;
     print_child(n1_par); 
     return 0;    
 }
@@ -471,8 +471,9 @@ int main(int argc, char *argv[])
 {
     //root_path = argv[1];    
     root_size = atoi(argv[argc-1]);//*1024*1024; //MB to B conversion
+    root_size = root_size*1024*1024;
     printf("********** root size : %d ************* \n",root_size);
-    make_root_node(root_path,root_size*1024*1024);
+    make_root_node(root_path,root_size);
     if (root==NULL)
         printf("root is NULL");
     else    
