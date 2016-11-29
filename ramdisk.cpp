@@ -125,6 +125,12 @@ void print_map(){
     return ;
 }
 
+static int l_truncate(const char *path, off_t size){
+
+  return 0;
+
+}
+
 static int l_write(const char *path, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
@@ -329,11 +335,15 @@ static int l_unlink(const char *path){
     for(i=0;i<n_par->num_child;i++){
         if(n==n_par->child[i]){
             printf("**********************child with path as %s and node pointer as %d which is same as n_par->child[i] found at i : %d and num_child : %d match at i : %d\n",path,n,n_par->child[i],n_par->num_child,i);
+          if(n->file_type=='d')
+		root_size+=128;
+	  else 
+		root_size+=256;
             freeNode(n);
             kk = 1;
-    n_par->num_child--;
+           n_par->num_child--;
            // if(i == n_par->num_child-1)
-	   //	break;
+	   //	break; 
        }
        if(i == n_par->num_child)
          break;
@@ -347,10 +357,6 @@ static int l_unlink(const char *path){
     //n_par->num_child--;
     printf("***********reduced num of child is %d\n",n_par->num_child);
 
-   printf("remaining child of parent node\n");
-   for(i=0;i<n_par->num_child;i++){
-   printf("child is %s \n",n_par->child[i]->file_name);
-  }
    print_child(n_par);
    printf("erase entry from map_node1\n");
    map_node1.erase(path);
@@ -489,6 +495,7 @@ int main(int argc, char *argv[])
     l_rmdk.getattr = l_getattr;
     l_rmdk.opendir = l_opendir;
     l_rmdk.write = l_write;
+    l_rmdk.truncate = l_truncate;
     //strcpy(root_path ,"/");
     printf( "file is %s size %d  argc : %d\n", root_path, root_size, argc);//, map_node[root_path]->file_name,argc);
     printf("print root:\n");
@@ -496,4 +503,3 @@ int main(int argc, char *argv[])
     printf("******check********\n");
     return fuse_main(argc-1, argv, &l_rmdk, NULL);
 }
-
